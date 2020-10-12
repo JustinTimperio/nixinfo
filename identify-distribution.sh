@@ -31,27 +31,27 @@
 #    - FreeBSD
 # ======================================
 
+# Allow For Manual Spesification of Package Manager
+if [ -z $1 ]; then
+  alt_pkg_manager='NONE'
+else
+  alt_pkg_manager=$1
+fi
 
 # Allow For Manual Spesification of /etc/os-release File
-if [ -z $1 ]; then
+if [ -z $2 ]; then
   release_file="/etc/os-release"
 else
-  release_file=$1
+  release_file=$2
 fi
 
 # Allow For Manual Spesification of Alternate Release File
-if [ -z $2 ]; then
+if [ -z $3 ]; then
   alt_release_file="NONE"
 else
-  alt_release_file=$2
+  alt_release_file=$3
 fi
 
-# Allow For Manual Spesification of Package Manager
-if [ -z $3 ]; then
-  alt_pkg_manager='NONE'
-else
-  alt_pkg_manager=$3
-fi
 
 
 print_output(){
@@ -74,35 +74,35 @@ identify_pkg_manager(){
   # SUSE Based
   elif [ -f "/usr/bin/zypper" ]; then
     type=$(file /usr/bin/zypper --mime-type | awk -F '[ ]' '{ print $2 }')
-    if [ "$type" != "text/plain" -o "$type" != "inode/symlink" ]; then
+    if [ "$type" != "text/x-shellscript" -o "$type" != "text/x-perl" -o "$type" != "inode/symlink" ]; then
       pkg_manager="zypper"
     fi
   
   # Deb Based
   elif [ -f "/usr/bin/apt" ] || [ -f "/bin/apt" ]; then
     type=$(file /usr/bin/apt --mime-type | awk -F '[ ]' '{ print $2 }')
-    if [ "$type" != "text/plain" -o "$type" != "inode/symlink" ]; then
+    if [ "$type" != "text/x-shellscript" -o "$type" != "text/x-perl" -o "$type" != "inode/symlink" ]; then
       pkg_manager="apt"
     fi
 
   # RHL Based
   elif [ -f "/usr/bin/yum" ] || [ -f "/bin/yum" ]; then
     type=$(file /usr/bin/yum --mime-type | awk -F '[ ]' '{ print $2 }')
-    if [ "$type" != "text/plain" -o "$type" != "inode/symlink" ]; then
+    if [ "$type" != "text/x-shellscript" -o "$type" != "text/x-perl" -o "$type" != "inode/symlink" ]; then
       pkg_manager="yum"
     fi
 
   # Arch Based
   elif [ -f "/usr/bin/pacman" ] || [ -f "/bin/pacman" ]; then
     type=$(file /usr/bin/pacman --mime-type | awk -F '[ ]' '{ print $2 }')
-    if [ "$type" != "text/plain" -o "$type" != "inode/symlink" ]; then
+    if [ "$type" != "text/x-shellscript" -o "$type" != "text/x-perl" -o "$type" != "inode/symlink" ]; then
       pkg_manager="pacman"
     fi
 
   # FreeBSD
   elif [ -f "/usr/sbin/pkg" ]; then
     type=$(file /usr/sbin/pkg --mime-type | awk -F '[ ]' '{ print $2 }')
-    if [ "$type" != "text/plain" -o "$type" != "inode/symlink" ]; then
+    if [ "$type" != "text/x-shellscript" -o "$type" != "text/x-perl" -o "$type" != "inode/symlink" ]; then
       pkg_manager="pkg"
     fi
 
@@ -182,7 +182,7 @@ identify_rhl(){
     elif [ "$distro" = "CENTOS" ]; then
 
       if [ "$alt_release_file" = "NONE" ]; then
-        alt_release_file='/etc/centos_release'
+        alt_release_file='/etc/centos-release'
       fi
 
       name=$(cat $alt_release_file)
