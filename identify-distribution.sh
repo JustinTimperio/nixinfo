@@ -53,7 +53,6 @@ else
 fi
 
 
-
 print_output(){
   echo "Distribution='$distro'"
   echo "Full_Name='$name'"
@@ -229,28 +228,33 @@ identify_suse(){
   kernel=$(uname -r | awk -F '[-]' '{print $1}')
   
   if [ -f "$release_file" ]; then
-    distro=$(awk -F '[= ]' '/^NAME=/ { gsub(/"/,"");  print toupper($3) }' $release_file)
+    distro=$(awk -F '=' '/^NAME=/ { gsub(/"/,"");  print toupper($2) }' $release_file)
     
-    if [ "$distro" = "LEAP" ]; then
-      # Tested
+    if [ "$distro" = "OPENSUSE LEAP" ]; then
+      distro="LEAP"
       name=$(awk -F '=' '/^PRETTY_NAME=/ { gsub(/"/,"");  print $2 }' $release_file)
       major=$(awk -F '[=. ]' '/^VERSION_ID=/ { gsub(/"/,"");  print $2 }' $release_file)
       minor=$(awk -F '[=. ]' '/^VERSION_ID=/ { gsub(/"/,"");  print $3 }' $release_file)
       patch='n/a'
 
-    elif [ "$distro" = "TUMBLEWEED" ]; then
-      # Tested
+    elif [ "$distro" = "OPENSUSE TUMBLEWEED" ]; then
+      distro="TUMBLEWEED"
       name=$(awk -F '=' '/^PRETTY_NAME=/ { gsub(/"/,"");  print $2 }' $release_file)
       major=$(awk -F '[= ]' '/^VERSION_ID=/ { gsub(/"/,"");  print $2 }' $release_file | rev | cut -c5- | rev)
       minor=$(awk -F '[= ]' '/^VERSION_ID=/ { gsub(/"/,"");  print $2 }' $release_file | cut -c5- | rev | cut -c3- | rev)
       patch=$(awk -F '[= ]' '/^VERSION_ID=/ { gsub(/"/,"");  print $2 }' $release_file | cut -c7-)
 
     elif [ "$distro" = "SLES" ]; then
-      # Un-Tested
-      name=$(awk -F '=' '/^NAME=/ { gsub(/"/,"");  print $2 }' $release_file)
+      name=$(awk -F '=' '/^PRETTY_NAME=/ { gsub(/"/,"");  print $2 }' $release_file)
       major=$(awk -F '[=.]' '/^VERSION_ID=/ { gsub(/"/,"");  print $2 }' $release_file)
       minor=$(awk -F '[=.]' '/^VERSION_ID=/ { gsub(/"/,"");  print $3 }' $release_file)
       patch='n/a'
+
+    else
+      name=$(awk -F '=' '/^PRETTY_NAME=/ { gsub(/"/,"");  print $2 }' $release_file)
+      major=$(awk -F '=' '/^VERSION=/ { gsub(/"/,"");  print $2 }' $release_file)
+      minor='UNKNOWN'
+      patch='UNKNOWN'
     fi
   
   else
@@ -264,7 +268,6 @@ identify_arch(){
   kernel=$(uname -r | awk -F '[-]' '{print $1}')
   
   if [ -f "$release_file" ]; then
-    # Tested
     distro=$(awk -F '[= ]' '/^NAME=/ { gsub(/"/,"");  print toupper($2) }' $release_file)
     name=$(awk -F '=' '/^PRETTY_NAME=/ { gsub(/"/,"");  print $2 }' $release_file)
     major=$(awk -F '=' '/^BUILD_ID/ { gsub(/"/,""); print $2 }' $release_file)
@@ -279,7 +282,6 @@ identify_arch(){
 
 
 identify_freebsd(){
-  # Tested
   kernel=$(uname -K)
   distro=$(uname | tr [a-z] [A-Z])
   name="$(uname) $(uname -r)"
@@ -293,7 +295,6 @@ identify_alpine(){
   kernel=$(uname -r | awk -F '[-]' '{ print $1 }')
   
   if [ -f "$release_file" ]; then
-    # Tested
     distro=$(awk -F '[= ]' '/^NAME=/ { gsub(/"/,"");  print toupper($2) }' $release_file)
     name=$(awk -F '=' '/^PRETTY_NAME=/{ gsub(/"/,""); print $2 }' $release_file)
     major=$(awk -F '[=. ]' '/^VERSION_ID=/ { gsub(/"/,"");  print $2 }' $release_file)
