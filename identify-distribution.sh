@@ -67,54 +67,62 @@ print_output(){
 
 identify_pkg_manager(){
 
-  # Override Package Manager
-  if [ "$alt_pkg_manager" != "NONE" ]; then
-    pkg_manager="$alt_pkg_manager"
-
   # SUSE Based
-  elif [ -f "/usr/bin/zypper" ]; then
+  if [ -f "/usr/bin/zypper" ]; then
     type=$(file $(readlink -f /usr/bin/zypper) --mime-type | awk -F '[ /]' '{ print $6 }')
     if [ "$type" != "x-shellscript" -a "$type" != "x-perl" ]; then
       pkg_manager="zypper"
     fi
+  fi
   
   # Deb Based
-  elif [ -f "/usr/bin/apt" ] || [ -f "/bin/apt" ]; then
+  if [ -f "/usr/bin/apt" ]; then
     type=$(file $(readlink -f /usr/bin/apt) --mime-type | awk -F '[ /]' '{ print $6 }')
     if [ "$type" != "x-shellscript" -a "$type" != "x-perl" ]; then
       pkg_manager="apt"
     fi
+  fi
 
   # RHL Based
-  elif [ -f "/usr/bin/yum" ] || [ -f "/bin/yum" ]; then
+  if [ -f "/usr/bin/yum" ] || [ -f "/bin/yum" ]; then
     type=$(file $(readlink -f /usr/bin/yum) --mime-type | awk -F '[ /]' '{ print $6 }')
     if [ "$type" != "x-shellscript" -a "$type" != "x-perl" ]; then
       pkg_manager="yum"
     fi
+  fi
 
   # Arch Based
-  elif [ -f "/usr/bin/pacman" ] || [ -f "/bin/pacman" ]; then
+  if [ -f "/usr/bin/pacman" ] || [ -f "/bin/pacman" ]; then
     type=$(file $(readlink -f /usr/bin/pacman) --mime-type | awk -F '[ /]' '{ print $6 }')
     if [ "$type" != "x-shellscript" -a "$type" != "x-perl" ]; then
       pkg_manager="pacman"
     fi
+  fi
 
   # FreeBSD
-  elif [ -f "/usr/sbin/pkg" ]; then
-    type=$(file $(readlink -f /usr/bin/pkg) --mime-type | awk -F '[ /]' '{ print $6 }')
+  if [ -f "/usr/sbin/pkg" ]; then
+    type=$(file $(readlink -f /usr/sbin/pkg) --mime-type | awk -F '[ /]' '{ print $6 }')
     if [ "$type" != "x-shellscript" -a "$type" != "x-perl" ]; then
       pkg_manager="pkg"
     fi
+  fi
 
   # Alpine Linux
-  elif [ -f "/sbin/apk" ]; then
+  if [ -f "/sbin/apk" ]; then
     # Apline Doesn't Come with `file`
     pkg_manager="apk"
+  fi
 
+  # Override Package Manager
+  if [ "$alt_pkg_manager" != "NONE" ]; then
+    pkg_manager="$alt_pkg_manager"
+  fi
+  
   # Can't Determine
-  else
+  if [ -z $pkg_manager ]; then
     pkg_manager="UNKNOWN"
   fi
+  
 }
 
 
@@ -125,7 +133,7 @@ identify_deb(){
     distro=$(awk -F '[= ]' '/^NAME=/ { gsub(/"/,"");  print toupper($2) }' $release_file)
 
     if [ "$distro" = "UBUNTU" ]; then
-      name=$(awk -F '[= ]' '/^PRETTY_NAME=/ { gsub(/"/,"");  print $2 }' $release_file)
+      name=$(awk -F '=' '/^PRETTY_NAME=/ { gsub(/"/,"");  print $2 }' $release_file)
       major=$(awk -F '[=. ]' '/^VERSION=/ { gsub(/"/,"");  print $2 }' $release_file)
       minor=$(awk -F '[=. ]' '/^VERSION=/ { gsub(/"/,"");  print $3 }' $release_file)
       patch=$(awk -F '[=. ]' '/^VERSION=/ { gsub(/"/,"");  print $4 }' $release_file)
@@ -286,7 +294,7 @@ identify_alpine(){
   
   if [ -f "$release_file" ]; then
     # Tested
-    distro=$(awk -F '[=]' '/^NAME=/ { gsub(/"/,"");  print toupper($2) }' $release_file)
+    distro=$(awk -F '[= ]' '/^NAME=/ { gsub(/"/,"");  print toupper($2) }' $release_file)
     name=$(awk -F '=' '/^PRETTY_NAME=/{ gsub(/"/,""); print $2 }' $release_file)
     major=$(awk -F '[=. ]' '/^VERSION_ID=/ { gsub(/"/,"");  print $2 }' $release_file)
     minor=$(awk -F '[=. ]' '/^VERSION_ID=/ { gsub(/"/,"");  print $3 }' $release_file)
