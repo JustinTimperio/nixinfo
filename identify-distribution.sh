@@ -74,35 +74,35 @@ identify_pkg_manager(){
   # SUSE Based
   elif [ -f "/usr/bin/zypper" ]; then
     type=$(file /usr/bin/zypper --mime-type | awk -F '[ /]' '{ print $6 }')
-    if [ "$type" != "x-shellscript" && "$type" != "x-perl" && "$type" != "symlink" ]; then
+    if [ "$type" != "x-shellscript" -a "$type" != "x-perl" -a "$type" != "symlink" ]; then
       pkg_manager="zypper"
     fi
   
   # Deb Based
   elif [ -f "/usr/bin/apt" ] || [ -f "/bin/apt" ]; then
     type=$(file /usr/bin/apt --mime-type | awk -F '[ /]' '{ print $6 }')
-    if [ "$type" != "x-shellscript" && "$type" != "x-perl" && "$type" != "symlink" ]; then
+    if [ "$type" != "x-shellscript" -a "$type" != "x-perl" -a "$type" != "symlink" ]; then
       pkg_manager="apt"
     fi
 
   # RHL Based
   elif [ -f "/usr/bin/yum" ] || [ -f "/bin/yum" ]; then
     type=$(file /usr/bin/yum --mime-type | awk -F '[ /]' '{ print $6 }')
-    if [ "$type" != "x-shellscript" && "$type" != "x-perl" && "$type" != "symlink" ]; then
+    if [ "$type" != "x-shellscript" -a "$type" != "x-perl" -a "$type" != "symlink" ]; then
       pkg_manager="yum"
     fi
 
   # Arch Based
   elif [ -f "/usr/bin/pacman" ] || [ -f "/bin/pacman" ]; then
     type=$(file /usr/bin/pacman --mime-type | awk -F '[ /]' '{ print $6 }')
-    if [ "$type" != "x-shellscript" && "$type" != "x-perl" && "$type" != "symlink" ]; then
+    if [ "$type" != "x-shellscript" -a "$type" != "x-perl" -a "$type" != "symlink" ]; then
       pkg_manager="pacman"
     fi
 
   # FreeBSD
   elif [ -f "/usr/sbin/pkg" ]; then
     type=$(file /usr/bin/pkg --mime-type | awk -F '[ /]' '{ print $6 }')
-    if [ "$type" != "x-shellscript" && "$type" != "x-perl" && "$type" != "symlink" ]; then
+    if [ "$type" != "x-shellscript" -a "$type" != "x-perl" -a "$type" != "symlink" ]; then
       pkg_manager="pkg"
     fi
 
