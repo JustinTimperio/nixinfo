@@ -32,11 +32,16 @@
 # ======================================
 
 
-# Allow For Manual Spesification of os-release File
+# Allow For Manual Spesification of /etc/os-release File
 if [ -z $1 ]; then
   release_file="/etc/os-release"
 else
   release_file=$1
+fi
+
+# Allow For Manual Spesification of Alternate Release File
+if [ ! -z $2 ]; then
+  alt_release_file=$2
 fi
 
 
@@ -89,10 +94,8 @@ identify_pkg_manager(){
 
   # Alpine Linux
   elif [ -f "/sbin/apk" ]; then
-    type=$(file /sbin/apk --mime-type | awk -F '[ ]' '{ print $2 }')
-    if [ "$type" != "text/plain" -o "$type" != "inode/symlink" ]; then
-      pkg_manager="apk"
-    fi
+    # Apline Doesn't Come with `file`
+    pkg_manager="apk"
 
   # Can't Determine
   else
@@ -107,25 +110,32 @@ identify_deb(){
   if [ -f "$release_file" ]; then
     distro=$(awk -F '[= ]' '/^NAME=/ { gsub(/"/,"");  print toupper($2) }' $release_file)
 
-    if [ "$distro" = "Ubuntu" ]; then
+    if [ "$distro" = "UBUNTU" ]; then
       name=$(awk -F '[= ]' '/^PRETTY_NAME=/ { gsub(/"/,"");  print $2 }' $release_file)
       major=$(awk -F '[=. ]' '/^VERSION=/ { gsub(/"/,"");  print $2 }' $release_file)
       minor=$(awk -F '[=. ]' '/^VERSION=/ { gsub(/"/,"");  print $3 }' $release_file)
       patch=$(awk -F '[=. ]' '/^VERSION=/ { gsub(/"/,"");  print $4 }' $release_file)
 
-    elif [ "$distro" = "Debian" ]; then
+    elif [ "$distro" = "DEBIAN" ]; then
       name=$(awk -F '=' '/^PRETTY_NAME=/ { gsub(/"/,"");  print $2 }' $release_file)
-      major=$(head -1 /etc/debian_version | awk -F '[=.]' '{ gsub(/"/,""); print $1 }')
-      minor=$(head -1 /etc/debian_version | awk -F '[=.]' '{ gsub(/"/,""); print $2 }')
+ 
+      if [ -z $2 ]; then
+        alt_release_file=$2
+      else
+        alt_release_file='/etc/debian_version'
+      fi
+
+      major=$(head -1 $alt_release_file | awk -F '[=.]' '{ gsub(/"/,""); print $1 }')
+      minor=$(head -1 $alt_release_file | awk -F '[=.]' '{ gsub(/"/,""); print $2 }')
       patch='n/a'
 
-    elif [ "$distro" = "Kali" ]; then
+    elif [ "$distro" = "KALI" ]; then
       name=$(awk -F '=' '/^PRETTY_NAME=/ { gsub(/"/,"");  print $2 }' $release_file)
       major=$(awk -F '[=.]' '/^VERSION=/ { gsub(/"/,"");  print $2 }' $release_file)
       minor=$(awk -F '[=.]' '/^VERSION=/ { gsub(/"/,"");  print $3 }' $release_file)
       patch='n/a'
     
-    elif [ "$distro" = "parrot" ]; then
+    elif [ "$distro" = "PARROT" ]; then
       name=$(awk -F '=' '/^PRETTY_NAME=/ { gsub(/"/,"");  print $2 }' $release_file)
       major=$(awk -F '[=.]' '/^VERSION=/ { gsub(/"/,"");  print $2 }' $release_file)
       minor=$(awk -F '[=.]' '/^VERSION=/ { gsub(/"/,"");  print $3 }' $release_file)
@@ -133,7 +143,7 @@ identify_deb(){
 
     else
       name=$(awk -F '=' '/^PRETTY_NAME=/ { gsub(/"/,"");  print $2 }' $release_file)
-      major=$(awk -F '=' '/^VERSION/ { gsub(/"/,"");  print $2 }' $release_file)
+      major=$(awk -F '=' '/^VERSION=/ { gsub(/"/,"");  print $2 }' $release_file)
       minor='UNKNOWN'
       patch='UNKNOWN'
     fi
@@ -151,33 +161,43 @@ identify_rhl(){
   if [ -f "$release_file" ]; then
     distro=$(awk -F '[= ]' '/^NAME=/ { gsub(/"/,"");  print toupper($2) }' $release_file)
     
-    if [ "$distro" = "fedora" ]; then
-      # Tested
+    if [ "$distro" = "FEDORA" ]; then
       name=$(awk -F '=' '/^PRETTY_NAME=/ { gsub(/"/,"");  print $2 }' $release_file)
       major=$(awk -F '[= ]' '/^VERSION=/ { gsub(/"/,"");  print $2 }' $release_file)
       minor='n/a'
       patch='n/a'
     
-    elif [ "$distro" = "centos" ]; then
-      # Tested
-      name=$(cat /etc/centos-release)
-      major=$(grep -o '[0-9]\+' /etc/centos-release | sed -n '1p')
-      minor=$(grep -o '[0-9]\+' /etc/centos-release | sed -n '2p')
-      patch=$(grep -o '[0-9]\+' /etc/centos-release | sed -n '3p')
+    elif [ "$distro" = "CENTOS" ]; then
+      
+      if [ -z $2 ]; then
+        alt_release_file=$2
+      else
+        alt_release_file='/etc/centos_release'
+      fi
+      
+      name=$(cat $alt_release_file)
+      major=$(grep -o '[0-9]\+' $alt_release_file | sed -n '1p')
+      minor=$(grep -o '[0-9]\+' $alt_release_file | sed -n '2p')
+      patch=$(grep -o '[0-9]\+' $alt_release_file | sed -n '3p')
 
-    elif [ "$distro" = "oracle" ]; then
-      # Tested
+    elif [ "$distro" = "ORACLE" ]; then
       name=$(awk -F '=' '/^PRETTY_NAME=/ { gsub(/"/,"");  print $2 }' $release_file)
       major=$(awk -F '[=.]' '/^VERSION_ID=/ { gsub(/"/,"");  print $2 }' $release_file)
       minor=$(awk -F '[=.]' '/^VERSION_ID=/ { gsub(/"/,"");  print $3 }' $release_file)
       patch='n/a'
     
-    elif [ "$distro" = "redhat" ]; then
-      # Un-Tested
+    elif [ "$distro" = "RED" ]; then
+      distro='REDHAT'
       name=$(awk -F '=' '/^PRETTY_NAME=/ { gsub(/"/,"");  print $2 }' $release_file)
-      major='n/a'
-      minor='n/a'
+      major=$(awk -F '[=.]' '/^VERSION_ID=/ { gsub(/"/,"");  print $2 }' $release_file)
+      minor=$(awk -F '[=.]' '/^VERSION_ID=/ { gsub(/"/,"");  print $3 }' $release_file)
       patch='n/a'
+    
+    else
+      name=$(awk -F '=' '/^PRETTY_NAME=/ { gsub(/"/,"");  print $2 }' $release_file)
+      major=$(awk -F '=' '/^VERSION=/ { gsub(/"/,"");  print $2 }' $release_file)
+      minor='UNKNOWN'
+      patch='UNKNOWN'
     fi
 
   else
