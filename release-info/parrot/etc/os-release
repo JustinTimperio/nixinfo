@@ -1,0 +1,9 @@
+PRETTY_NAME="Parrot GNU/Linux 4.10"
+NAME="Parrot GNU/Linux"
+ID=parrot
+ID_LIKE=debian
+VERSION="4.10"
+VERSION_ID="4.10"
+HOME_URL="https://www.parrotsec.org/"
+SUPPORT_URL="https://community.parrotsec.org/"
+BUG_REPORT_URL="https://community.parrotsec.org/"

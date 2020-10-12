@@ -41,44 +41,58 @@ fi
 
 
 print_output(){
-  echo "Package_Manager=$pkg_manager"
-  echo "Distribution=$name"
-  echo "Kernel=$kernel"
-  echo "Major=$major"
-  echo "Minor=$minor"
-  echo "Patch=$patch"
+  echo "Distribution='$distro'"
+  echo "Full_Name='$name'"
+  echo "Package_Manager='$pkg_manager'"
+  echo "Kernel='$kernel'"
+  echo "Major='$major'"
+  echo "Minor='$minor'"
+  echo "Patch='$patch'"
 }
 
 
 identify_pkg_manager(){
   # SUSE Based
   if [ -f "/usr/bin/zypper" ]; then
-    # Needs run first because Tumbleweed has both zypper and apt-rpm
-    pkg_manager="zypper"
+    type=$(file /usr/bin/zypper --mime-type | awk -F '[ ]' '{ print $2 }')
+    if [ "$type" != "text/plain" -o "$type" != "inode/symlink" ]; then
+      pkg_manager="zypper"
+    fi
   
   # Deb Based
   elif [ -f "/usr/bin/apt" ] || [ -f "/bin/apt" ]; then
-    pkg_manager="apt"
+    type=$(file /usr/bin/apt --mime-type | awk -F '[ ]' '{ print $2 }')
+    if [ "$type" != "text/plain" -o "$type" != "inode/symlink" ]; then
+      pkg_manager="apt"
+    fi
 
   # RHL Based
   elif [ -f "/usr/bin/yum" ] || [ -f "/bin/yum" ]; then
-    pkg_manager="yum"
-
-  # SUSE Based
-  elif [ -f "/usr/bin/zypper" ]; then
-    pkg_manager="zypper"
+    type=$(file /usr/bin/yum --mime-type | awk -F '[ ]' '{ print $2 }')
+    if [ "$type" != "text/plain" -o "$type" != "inode/symlink" ]; then
+      pkg_manager="yum"
+    fi
 
   # Arch Based
   elif [ -f "/usr/bin/pacman" ] || [ -f "/bin/pacman" ]; then
-    pkg_manager="pacman"
+    type=$(file /usr/bin/pacman --mime-type | awk -F '[ ]' '{ print $2 }')
+    if [ "$type" != "text/plain" -o "$type" != "inode/symlink" ]; then
+      pkg_manager="pacman"
+    fi
 
   # FreeBSD
   elif [ -f "/usr/sbin/pkg" ]; then
-    pkg_manager="pkg"
+    type=$(file /usr/sbin/pkg --mime-type | awk -F '[ ]' '{ print $2 }')
+    if [ "$type" != "text/plain" -o "$type" != "inode/symlink" ]; then
+      pkg_manager="pkg"
+    fi
 
   # Alpine Linux
   elif [ -f "/sbin/apk" ]; then
-    pkg_manager="apk"
+    type=$(file /sbin/apk --mime-type | awk -F '[ ]' '{ print $2 }')
+    if [ "$type" != "text/plain" -o "$type" != "inode/symlink" ]; then
+      pkg_manager="apk"
+    fi
 
   # Can't Determine
   else
@@ -91,38 +105,35 @@ identify_deb(){
   kernel=$(uname -r | awk -F '[-]' '{print $1}')
   
   if [ -f "$release_file" ]; then
-    distro=$(awk -F '[= ]' '/^NAME=/ { gsub(/"/,"");  print tolower($2) }' $release_file)
+    distro=$(awk -F '[= ]' '/^NAME=/ { gsub(/"/,"");  print toupper($2) }' $release_file)
 
-    if [ "$distro" = "ubuntu" ]; then
-      # Tested
-      name=$(awk -F '=' '/^PRETTY_NAME=/ { gsub(/"/,"");  print $2 }' $release_file)
+    if [ "$distro" = "Ubuntu" ]; then
+      name=$(awk -F '[= ]' '/^PRETTY_NAME=/ { gsub(/"/,"");  print $2 }' $release_file)
       major=$(awk -F '[=. ]' '/^VERSION=/ { gsub(/"/,"");  print $2 }' $release_file)
       minor=$(awk -F '[=. ]' '/^VERSION=/ { gsub(/"/,"");  print $3 }' $release_file)
       patch=$(awk -F '[=. ]' '/^VERSION=/ { gsub(/"/,"");  print $4 }' $release_file)
 
-    elif [ "$distro" = "debian" ]; then
-      # Tested
+    elif [ "$distro" = "Debian" ]; then
       name=$(awk -F '=' '/^PRETTY_NAME=/ { gsub(/"/,"");  print $2 }' $release_file)
       major=$(head -1 /etc/debian_version | awk -F '[=.]' '{ gsub(/"/,""); print $1 }')
       minor=$(head -1 /etc/debian_version | awk -F '[=.]' '{ gsub(/"/,""); print $2 }')
       patch='n/a'
 
-    elif [ "$distro" = "kali" ]; then
-      # Tested
+    elif [ "$distro" = "Kali" ]; then
       name=$(awk -F '=' '/^PRETTY_NAME=/ { gsub(/"/,"");  print $2 }' $release_file)
       major=$(awk -F '[=.]' '/^VERSION=/ { gsub(/"/,"");  print $2 }' $release_file)
       minor=$(awk -F '[=.]' '/^VERSION=/ { gsub(/"/,"");  print $3 }' $release_file)
       patch='n/a'
     
-    elif [ "$distro" = "Parrot" ]; then
-      # Un-Tested
-      major='n/a'
-      minor='n/a'
+    elif [ "$distro" = "parrot" ]; then
+      name=$(awk -F '=' '/^PRETTY_NAME=/ { gsub(/"/,"");  print $2 }' $release_file)
+      major=$(awk -F '[=.]' '/^VERSION=/ { gsub(/"/,"");  print $2 }' $release_file)
+      minor=$(awk -F '[=.]' '/^VERSION=/ { gsub(/"/,"");  print $3 }' $release_file)
       patch='n/a'
 
     else
-      # Tested
-      major=$(awk -F '[=]' '/^VERSION_ID/ { gsub(/"/,"");  print $2 }' $release_file)
+      name=$(awk -F '=' '/^PRETTY_NAME=/ { gsub(/"/,"");  print $2 }' $release_file)
+      major=$(awk -F '=' '/^VERSION/ { gsub(/"/,"");  print $2 }' $release_file)
       minor='UNKNOWN'
       patch='UNKNOWN'
     fi
@@ -138,7 +149,7 @@ identify_rhl(){
   kernel=$(uname -r | awk -F '[-]' '{print $1}')
   
   if [ -f "$release_file" ]; then
-    distro=$(awk -F '[= ]' '/^NAME=/ { gsub(/"/,"");  print tolower($2) }' $release_file)
+    distro=$(awk -F '[= ]' '/^NAME=/ { gsub(/"/,"");  print toupper($2) }' $release_file)
     
     if [ "$distro" = "fedora" ]; then
       # Tested
@@ -180,23 +191,23 @@ identify_suse(){
   kernel=$(uname -r | awk -F '[-]' '{print $1}')
   
   if [ -f "$release_file" ]; then
-    distro=$(awk -F '[= ]' '/^NAME=/ { gsub(/"/,"");  print tolower($3) }' $release_file)
+    distro=$(awk -F '[= ]' '/^NAME=/ { gsub(/"/,"");  print toupper($3) }' $release_file)
     
-    if [ "$distro" = "leap" ]; then
+    if [ "$distro" = "LEAP" ]; then
       # Tested
       name=$(awk -F '=' '/^PRETTY_NAME=/ { gsub(/"/,"");  print $2 }' $release_file)
       major=$(awk -F '[=. ]' '/^VERSION_ID=/ { gsub(/"/,"");  print $2 }' $release_file)
       minor=$(awk -F '[=. ]' '/^VERSION_ID=/ { gsub(/"/,"");  print $3 }' $release_file)
       patch='n/a'
 
-    elif [ "$distro" = "tumbleweed" ]; then
+    elif [ "$distro" = "TUMBLEWEED" ]; then
       # Tested
       name=$(awk -F '=' '/^PRETTY_NAME=/ { gsub(/"/,"");  print $2 }' $release_file)
       major=$(awk -F '[= ]' '/^VERSION_ID=/ { gsub(/"/,"");  print $2 }' $release_file | rev | cut -c5- | rev)
       minor=$(awk -F '[= ]' '/^VERSION_ID=/ { gsub(/"/,"");  print $2 }' $release_file | cut -c5- | rev | cut -c3- | rev)
       patch=$(awk -F '[= ]' '/^VERSION_ID=/ { gsub(/"/,"");  print $2 }' $release_file | cut -c7-)
 
-    elif [ "$distro" = "sles" ]; then
+    elif [ "$distro" = "SLES" ]; then
       # Un-Tested
       name=$(awk -F '=' '/^NAME=/ { gsub(/"/,"");  print $2 }' $release_file)
       major=$(awk -F '[=.]' '/^VERSION_ID=/ { gsub(/"/,"");  print $2 }' $release_file)
@@ -216,8 +227,8 @@ identify_arch(){
   
   if [ -f "$release_file" ]; then
     # Tested
-    distro="arch"
-    name=$(awk -F '[= ]' '/^NAME/ { gsub(/"/,""); print $2 }' $release_file)
+    distro=$(awk -F '[= ]' '/^NAME=/ { gsub(/"/,"");  print toupper($2) }' $release_file)
+    name=$(awk -F '=' '/^PRETTY_NAME=/ { gsub(/"/,"");  print $2 }' $release_file)
     major=$(awk -F '=' '/^BUILD_ID/ { gsub(/"/,""); print $2 }' $release_file)
     minor=$(awk -F '=' '/^BUILD_ID/ { gsub(/"/,""); print $2 }' $release_file)
     patch=$(awk -F '=' '/^BUILD_ID/ {  gsub(/"/,""); print $2 }' $release_file)
@@ -231,7 +242,7 @@ identify_arch(){
 
 identify_freebsd(){
   # Tested
-  kernel=$(uname -r)
+  kernel=$(uname -K)
   distro=$(uname)
   name="$(uname) $(uname -r)"
   major=$(uname -r | awk -F '[.-]' '{ print $1 }')
