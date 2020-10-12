@@ -40,8 +40,17 @@ else
 fi
 
 # Allow For Manual Spesification of Alternate Release File
-if [ ! -z $2 ]; then
+if [ -z $2 ]; then
+  alt_release_file="NONE"
+else
   alt_release_file=$2
+fi
+
+# Allow For Manual Spesification of Package Manager
+if [ -z $3 ]; then
+  alt_pkg_manager='NONE'
+else
+  alt_pkg_manager=$3
 fi
 
 
@@ -57,8 +66,13 @@ print_output(){
 
 
 identify_pkg_manager(){
+
+  # Override Package Manager
+  if [ "$alt_pkg_manager" != "NONE" ]; then
+    pkg_manager="$alt_pkg_manager"
+
   # SUSE Based
-  if [ -f "/usr/bin/zypper" ]; then
+  elif [ -f "/usr/bin/zypper" ]; then
     type=$(file /usr/bin/zypper --mime-type | awk -F '[ ]' '{ print $2 }')
     if [ "$type" != "text/plain" -o "$type" != "inode/symlink" ]; then
       pkg_manager="zypper"
@@ -119,9 +133,7 @@ identify_deb(){
     elif [ "$distro" = "DEBIAN" ]; then
       name=$(awk -F '=' '/^PRETTY_NAME=/ { gsub(/"/,"");  print $2 }' $release_file)
  
-      if [ -z $2 ]; then
-        alt_release_file=$2
-      else
+      if [ "$alt_release_file" = "NONE" ]; then
         alt_release_file='/etc/debian_version'
       fi
 
@@ -134,7 +146,7 @@ identify_deb(){
       major=$(awk -F '[=.]' '/^VERSION=/ { gsub(/"/,"");  print $2 }' $release_file)
       minor=$(awk -F '[=.]' '/^VERSION=/ { gsub(/"/,"");  print $3 }' $release_file)
       patch='n/a'
-    
+
     elif [ "$distro" = "PARROT" ]; then
       name=$(awk -F '=' '/^PRETTY_NAME=/ { gsub(/"/,"");  print $2 }' $release_file)
       major=$(awk -F '[=.]' '/^VERSION=/ { gsub(/"/,"");  print $2 }' $release_file)
@@ -160,21 +172,19 @@ identify_rhl(){
   
   if [ -f "$release_file" ]; then
     distro=$(awk -F '[= ]' '/^NAME=/ { gsub(/"/,"");  print toupper($2) }' $release_file)
-    
+
     if [ "$distro" = "FEDORA" ]; then
       name=$(awk -F '=' '/^PRETTY_NAME=/ { gsub(/"/,"");  print $2 }' $release_file)
       major=$(awk -F '[= ]' '/^VERSION=/ { gsub(/"/,"");  print $2 }' $release_file)
       minor='n/a'
       patch='n/a'
-    
+
     elif [ "$distro" = "CENTOS" ]; then
-      
-      if [ -z $2 ]; then
-        alt_release_file=$2
-      else
+
+      if [ "$alt_release_file" = "NONE" ]; then
         alt_release_file='/etc/centos_release'
       fi
-      
+
       name=$(cat $alt_release_file)
       major=$(grep -o '[0-9]\+' $alt_release_file | sed -n '1p')
       minor=$(grep -o '[0-9]\+' $alt_release_file | sed -n '2p')
@@ -185,14 +195,14 @@ identify_rhl(){
       major=$(awk -F '[=.]' '/^VERSION_ID=/ { gsub(/"/,"");  print $2 }' $release_file)
       minor=$(awk -F '[=.]' '/^VERSION_ID=/ { gsub(/"/,"");  print $3 }' $release_file)
       patch='n/a'
-    
+
     elif [ "$distro" = "RED" ]; then
       distro='REDHAT'
       name=$(awk -F '=' '/^PRETTY_NAME=/ { gsub(/"/,"");  print $2 }' $release_file)
       major=$(awk -F '[=.]' '/^VERSION_ID=/ { gsub(/"/,"");  print $2 }' $release_file)
       minor=$(awk -F '[=.]' '/^VERSION_ID=/ { gsub(/"/,"");  print $3 }' $release_file)
       patch='n/a'
-    
+
     else
       name=$(awk -F '=' '/^PRETTY_NAME=/ { gsub(/"/,"");  print $2 }' $release_file)
       major=$(awk -F '=' '/^VERSION=/ { gsub(/"/,"");  print $2 }' $release_file)
@@ -263,7 +273,7 @@ identify_arch(){
 identify_freebsd(){
   # Tested
   kernel=$(uname -K)
-  distro=$(uname)
+  distro=$(uname | tr [a-z] [A-Z])
   name="$(uname) $(uname -r)"
   major=$(uname -r | awk -F '[.-]' '{ print $1 }')
   minor=$(uname -r | awk -F '[.-]' '{ print $2 }')
@@ -276,7 +286,7 @@ identify_alpine(){
   
   if [ -f "$release_file" ]; then
     # Tested
-    distro=$(awk -F '[= ]' '/^NAME=/ { gsub(/"/,"");  print tolower($2) }' $release_file)
+    distro=$(awk -F '[=]' '/^NAME=/ { gsub(/"/,"");  print toupper($2) }' $release_file)
     name=$(awk -F '=' '/^PRETTY_NAME=/{ print $2 }' $release_file)
     major=$(awk -F '[=. ]' '/^VERSION_ID=/ { gsub(/"/,"");  print $2 }' $release_file)
     minor=$(awk -F '[=. ]' '/^VERSION_ID=/ { gsub(/"/,"");  print $3 }' $release_file)
