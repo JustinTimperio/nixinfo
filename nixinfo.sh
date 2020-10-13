@@ -10,7 +10,6 @@
 #
 #   RHL Based:
 #    - Fedora
-#    - Fedora CoreOS
 #    - CentOS
 #    - RHEL
 #    - Oracle Linux
@@ -22,7 +21,6 @@
 #
 #   Arch Based:
 #    - Arch Linux
-#    - Manjaro
 #
 #   Alpine Based:
 #    - Alpine Linux
@@ -31,41 +29,40 @@
 #    - FreeBSD
 # ======================================
 
-# Allow For Manual Spesification of Package Manager
+# Allow For Raw Print or Source Import In Another Script
 if [ -z $1 ]; then
+  use_type='PRINT'
+elif [ "$1" = 'print' ] || [ "$1" = 'PRINT' ] ; then
+  use_type='PRINT'
+elif [ "$1" = 'no-print' ] || [ "$1" = 'NO-PRINT' ] ; then
+  use_type='SOURCE'
+else
+  use_type='PRINT'
+fi
+
+# Allow For Manual Spesification of Package Manager
+if [ -z $2 ]; then
   alt_pkg_manager='NONE'
 else
-  alt_pkg_manager=$1
+  alt_pkg_manager=$2
 fi
 
 # Allow For Manual Spesification of /etc/os-release File
-if [ -z $2 ]; then
+if [ -z $3 ]; then
   release_file="/etc/os-release"
 else
-  release_file=$2
+  release_file=$3
 fi
 
 # Allow For Manual Spesification of Alternate Release File
-if [ -z $3 ]; then
+if [ -z $4 ]; then
   alt_release_file="NONE"
 else
-  alt_release_file=$3
+  alt_release_file=$2
 fi
 
 
-print_output(){
-  echo "Distribution='$distro'"
-  echo "Full_Name='$name'"
-  echo "Package_Manager='$pkg_manager'"
-  echo "Kernel='$kernel'"
-  echo "Major='$major'"
-  echo "Minor='$minor'"
-  echo "Patch='$patch'"
-}
-
-
 identify_pkg_manager(){
-
   # SUSE Based
   if [ -f "/usr/bin/zypper" ]; then
     type=$(file $(readlink -f /usr/bin/zypper) --mime-type | awk -F '[ /]' '{ print $6 }')
@@ -83,15 +80,15 @@ identify_pkg_manager(){
   fi
 
   # RHL Based
-  if [ -f "/usr/bin/yum" ] || [ -f "/bin/yum" ]; then
+  if [ -f "/usr/bin/yum" ]; then
     type=$(file $(readlink -f /usr/bin/yum) --mime-type | awk -F '[ /]' '{ print $6 }')
     if [ "$type" != "x-shellscript" -a "$type" != "x-perl" ]; then
       pkg_manager="yum"
     fi
   fi
 
-  # Arch Based
-  if [ -f "/usr/bin/pacman" ] || [ -f "/bin/pacman" ]; then
+  # Arch Linux
+  if [ -f "/usr/bin/pacman" ]; then
     type=$(file $(readlink -f /usr/bin/pacman) --mime-type | awk -F '[ /]' '{ print $6 }')
     if [ "$type" != "x-shellscript" -a "$type" != "x-perl" ]; then
       pkg_manager="pacman"
@@ -121,7 +118,6 @@ identify_pkg_manager(){
   if [ -z $pkg_manager ]; then
     pkg_manager="UNKNOWN"
   fi
-  
 }
 
 
@@ -334,4 +330,23 @@ else
   exit 1
 fi
 
-print_output
+if [ "$use_type" = "PRINT" ]; then
+  # Print Info For User
+  echo "Distribution='$distro'"
+  echo "Full_Name='$name'"
+  echo "Package_Manager='$pkg_manager'"
+  echo "Kernel='$kernel'"
+  echo "Major='$major'"
+  echo "Minor='$minor'"
+  echo "Patch='$patch'"
+
+else
+  # Import Results as Source
+  distro=$distro
+  full_name=$name
+  pkg_manager=$pkg_manager
+  kernel=$kernel
+  major=$major
+  minor=$minor
+  patch=$patch
+fi
