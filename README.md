@@ -20,7 +20,7 @@ Patch='####'
 
 ### Import In a Shell Script
 ```shell
-source $(curl -s https://raw.githubusercontent.com/JustinTimperio/nixinfo/master/nixinfo.sh | sh -s no-print)
+source /your/path/nixinfo/nixinfo.sh no-print
 
 # Imported Vars Below
 $distro
